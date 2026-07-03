@@ -1,0 +1,104 @@
+<svg width="960" height="1120" viewBox="0 0 960 1120" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe Print','Comic Sans MS',cursive">
+  <defs>
+    <filter id="sketchy" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="7" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3.2"/>
+    </filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#333"/>
+    </marker>
+  </defs>
+
+  <style>
+    .box   { stroke:#333; stroke-width:2.5; filter:url(#sketchy); }
+    .lbl   { font-size:15px; fill:#1a1a1a; }
+    .lbl-b { font-size:15px; fill:#1a1a1a; font-weight:bold; }
+    .grp   { font-size:14px; fill:#555; }
+    .title { font-size:26px; fill:#111; font-weight:bold; }
+    .arrow { stroke:#333; stroke-width:2.2; fill:none; marker-end:url(#arrow); filter:url(#sketchy); }
+  </style>
+
+  <rect width="960" height="1120" fill="#fdfdfb"/>
+
+  <text x="480" y="45" text-anchor="middle" class="title">dbt-dag — Architecture</text>
+
+  <!-- Docker container -->
+  <rect x="30" y="80" width="900" height="200" rx="14" class="box" fill="none" stroke-dasharray="8 6"/>
+  <text x="50" y="105" class="grp">🐳 Docker — astro dev start</text>
+
+  <rect x="50"  y="130" width="150" height="120" rx="10" class="box" fill="#eaf3ff"/>
+  <text x="125" y="185" text-anchor="middle" class="lbl-b">Postgres</text>
+  <text x="125" y="205" text-anchor="middle" class="grp">metadata db</text>
+
+  <rect x="220" y="130" width="150" height="120" rx="10" class="box" fill="#eaf3ff"/>
+  <text x="295" y="185" text-anchor="middle" class="lbl-b">Scheduler</text>
+
+  <rect x="390" y="130" width="150" height="120" rx="10" class="box" fill="#eaf3ff"/>
+  <text x="465" y="180" text-anchor="middle" class="lbl-b">DAG</text>
+  <text x="465" y="200" text-anchor="middle" class="lbl-b">Processor</text>
+
+  <rect x="560" y="130" width="150" height="120" rx="10" class="box" fill="#eaf3ff"/>
+  <text x="635" y="185" text-anchor="middle" class="lbl-b">Triggerer</text>
+
+  <rect x="730" y="130" width="170" height="120" rx="10" class="box" fill="#cfe6ff" stroke="#017CEE" stroke-width="3.5"/>
+  <text x="815" y="180" text-anchor="middle" class="lbl-b">API Server</text>
+  <text x="815" y="200" text-anchor="middle" class="grp">Airflow UI</text>
+
+  <!-- API Server -> UI url -->
+  <path d="M900,190 C 940,190 940,320 900,335" class="arrow"/>
+  <rect x="700" y="310" width="200" height="55" rx="10" class="box" fill="#fff7d6"/>
+  <text x="800" y="343" text-anchor="middle" class="lbl">localhost:8080</text>
+
+  <!-- Scheduler/DAGProcessor -> Cosmos -->
+  <path d="M465,250 C 465,300 480,300 480,360" class="arrow"/>
+
+  <rect x="330" y="360" width="300" height="65" rx="10" class="box" fill="#ede7ff" stroke="#7b2ff7" stroke-width="3"/>
+  <text x="480" y="388" text-anchor="middle" class="lbl-b">dags/dbt_dag.py</text>
+  <text x="480" y="408" text-anchor="middle" class="grp">Cosmos DbtDag</text>
+
+  <path d="M480,425 L480,460" class="arrow"/>
+
+  <rect x="280" y="460" width="400" height="65" rx="10" class="box" fill="#fff0e8" stroke="#FF694B" stroke-width="3"/>
+  <text x="480" y="488" text-anchor="middle" class="lbl-b">dags/dbt-datapipeline-0</text>
+  <text x="480" y="508" text-anchor="middle" class="grp">git submodule (dbt project)</text>
+
+  <path d="M480,525 L480,560" class="arrow"/>
+
+  <!-- Lineage -->
+  <rect x="45" y="560" width="60" height="270" rx="12" fill="none" stroke="#bbb" stroke-width="1.5" stroke-dasharray="4 5"/>
+  <text x="75" y="850" text-anchor="middle" class="grp" transform="rotate(90 75 850)"></text>
+
+  <rect x="60"  y="565" width="190" height="55" rx="10" class="box" fill="#fdece7"/>
+  <text x="155" y="598" text-anchor="middle" class="lbl">stg_tpch_orders</text>
+
+  <rect x="60"  y="645" width="190" height="55" rx="10" class="box" fill="#fdece7"/>
+  <text x="155" y="678" text-anchor="middle" class="lbl">stg_tpch_line_items</text>
+
+  <path d="M250,592 L305,635" class="arrow"/>
+  <path d="M250,672 L305,650" class="arrow"/>
+
+  <rect x="310" y="608" width="190" height="55" rx="10" class="box" fill="#fdece7"/>
+  <text x="405" y="641" text-anchor="middle" class="lbl">int_order_items</text>
+
+  <path d="M500,635 L555,635" class="arrow"/>
+
+  <rect x="560" y="608" width="220" height="55" rx="10" class="box" fill="#fdece7"/>
+  <text x="670" y="641" text-anchor="middle" class="lbl">int_order_items_summary</text>
+
+  <path d="M780,635 L850,635 L850,700" class="arrow"/>
+  <path d="M155,620 C 155,760 780,780 850,730" class="arrow"/>
+
+  <rect x="770" y="700" width="150" height="65" rx="10" class="box" fill="#e2f6ff" stroke="#017CEE" stroke-width="3"/>
+  <text x="845" y="726" text-anchor="middle" class="lbl-b">fct_orders</text>
+  <text x="845" y="746" text-anchor="middle" class="grp">run + test</text>
+
+  <!-- down to snowflake -->
+  <path d="M480,700 C 480,780 480,820 480,860" class="arrow"/>
+  <path d="M845,765 C 845,830 600,860 500,865" class="arrow"/>
+
+  <rect x="280" y="880" width="400" height="90" rx="14" class="box" fill="#d6f3fb" stroke="#29B5E8" stroke-width="3.5"/>
+  <text x="480" y="918" text-anchor="middle" class="lbl-b" font-size="18">❄ Snowflake Warehouse</text>
+  <text x="480" y="944" text-anchor="middle" class="grp">DBT_DB.dbt_schema</text>
+
+  <text x="480" y="1010" text-anchor="middle" class="grp" font-size="13">Airflow schedules &amp; retries · dbt transforms · Cosmos keeps both in sync</text>
+</svg>
