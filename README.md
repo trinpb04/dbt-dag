@@ -1,45 +1,190 @@
-Overview
-========
+<div align="center">
 
-Welcome to Astronomer! This project was generated after you ran 'astro dev init' using the Astronomer CLI. This readme describes the contents of the project, as well as how to run Apache Airflow on your local machine.
+# ❄️ dbt-dag
 
-Project Contents
-================
+**Apache Airflow + astronomer-cosmos + dbt + Snowflake**, fully containerized with the Astro CLI.
 
-Your Astro project contains the following files and folders:
+A production-style local sandbox where dbt models become native Airflow tasks — no hand-written `BashOperator` glue code.
 
-- dags: This folder contains the Python files for your Airflow DAGs. By default, this directory includes one example DAG:
-    - `example_astronauts`: This DAG shows a simple ETL pipeline example that queries the list of astronauts currently in space from the Open Notify API and prints a statement for each astronaut. The DAG uses the TaskFlow API to define tasks in Python, and dynamic task mapping to dynamically print a statement for each astronaut. For more on how this DAG works, see our [Getting started tutorial](https://www.astronomer.io/docs/learn/get-started-with-airflow).
-- Dockerfile: This file contains a versioned Astro Runtime Docker image that provides a differentiated Airflow experience. If you want to execute other commands or overrides at runtime, specify them here.
-- include: This folder contains any additional files that you want to include as part of your project. It is empty by default.
-- packages.txt: Install OS-level packages needed for your project by adding them to this file. It is empty by default.
-- requirements.txt: Install Python packages needed for your project by adding them to this file. It is empty by default.
-- plugins: Add custom or community plugins for your project to this file. It is empty by default.
-- airflow_settings.yaml: Use this local-only file to specify Airflow Connections, Variables, and Pools instead of entering them in the Airflow UI as you develop DAGs in this project.
+[![Airflow](https://img.shields.io/badge/Airflow-3.x-017CEE?logo=apacheairflow&logoColor=white)](https://airflow.apache.org/)
+[![dbt](https://img.shields.io/badge/dbt-1.11-FF694B?logo=dbt&logoColor=white)](https://www.getdbt.com/)
+[![Cosmos](https://img.shields.io/badge/astronomer--cosmos-orchestration-8A2BE2)](https://astronomer.github.io/astronomer-cosmos/)
+[![Snowflake](https://img.shields.io/badge/Snowflake-warehouse-29B5E8?logo=snowflake&logoColor=white)](https://www.snowflake.com/)
+[![Docker](https://img.shields.io/badge/Docker-required-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 
-Deploy Your Project Locally
-===========================
+</div>
 
-Start Airflow on your local machine by running 'astro dev start'.
+---
 
-This command will spin up five Docker containers on your machine, each for a different Airflow component:
+## What is this?
 
-- Postgres: Airflow's Metadata Database
-- Scheduler: The Airflow component responsible for monitoring and triggering tasks
-- DAG Processor: The Airflow component responsible for parsing DAGs
-- API Server: The Airflow component responsible for serving the Airflow UI and API
-- Triggerer: The Airflow component responsible for triggering deferred tasks
+This repo orchestrates a [dbt project](https://github.com/trinpb04/dbt-datapipeline-0) (pulled in as a **git submodule**) through Apache Airflow using [`astronomer-cosmos`](https://astronomer.github.io/astronomer-cosmos/). Every dbt model gets automatically converted into its own Airflow task, wired up with the exact same dependency graph dbt already knows about — `ref()` and `source()` become upstream/downstream task edges for free.
 
-When all five containers are ready the command will open the browser to the Airflow UI at http://localhost:8080/. You should also be able to access your Postgres Database at 'localhost:5432/postgres' with username 'postgres' and password 'postgres'.
+```mermaid
+flowchart LR
+    subgraph Snowflake Source
+        A[tpch.orders] 
+        B[tpch.lineitem]
+    end
 
-Note: If you already have either of the above ports allocated, you can either [stop your existing Docker containers or change the port](https://www.astronomer.io/docs/astro/cli/troubleshoot-locally#ports-are-not-available-for-my-local-airflow-webserver).
+    subgraph Staging
+        C[stg_tpch_orders]
+        D[stg_tpch_line_items]
+    end
 
-Deploy Your Project to Astronomer
-=================================
+    subgraph Marts
+        E[int_order_items]
+        F[int_order_items_summary]
+        G[fct_orders]
+    end
 
-If you have an Astronomer account, pushing code to a Deployment on Astronomer is simple. For deploying instructions, refer to Astronomer documentation: https://www.astronomer.io/docs/astro/deploy-code/
+    A --> C
+    B --> D
+    C --> E
+    D --> E
+    E --> F
+    C --> G
+    F --> G
+```
 
-Contact
-=======
+## Architecture
 
-The Astronomer CLI is maintained with love by the Astronomer team. To report a bug or suggest a change, reach out to our support.
+```
+┌─────────────────────────── Docker (astro dev start) ───────────────────────────┐
+│                                                                                  │
+│   ┌────────────┐   ┌────────────┐   ┌───────────────┐   ┌────────────────┐     │
+│   │  Postgres  │   │  Scheduler │   │  DAG Processor │   │   Triggerer    │     │
+│   │ (metadata) │   │            │   │                │   │                │     │
+│   └────────────┘   └────────────┘   └───────────────┘   └────────────────┘     │
+│                              │                                                  │
+│                     ┌────────▼─────────┐                                       │
+│                     │    API Server     │──── http://localhost:8080            │
+│                     │  (Airflow UI/API) │                                       │
+│                     └───────────────────┘                                       │
+│                                                                                  │
+└──────────────────────────────────────────────────────────────────────────────┘
+                                     │
+                        dags/dbt_dag.py  (Cosmos DbtDag)
+                                     │
+                     dags/dbt-datapipeline-0/  (git submodule)
+                                     │
+                                     ▼
+                          ❄️  Snowflake warehouse
+```
+
+## Project structure
+
+```
+dbt-dag/
+├── dags/
+│   ├── dbt_dag.py                 # Cosmos DbtDag — the actual orchestration
+│   └── dbt-datapipeline-0/        # git submodule → the dbt project itself
+├── Dockerfile                     # Astro Runtime image + a dedicated dbt venv
+├── requirements.txt                # astronomer-cosmos, airflow-providers-snowflake
+├── airflow_settings.yaml          # LOCAL ONLY, gitignored — connections/vars live here
+└── README.md
+```
+
+Why a separate `dbt_venv` in the `Dockerfile`? `dbt-core` and `apache-airflow` frequently pin conflicting dependency versions, so `dbt-snowflake` is installed into its own virtualenv at build time and invoked by absolute path from the DAG, instead of sharing Airflow's Python environment.
+
+## Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) (Docker Desktop, or `docker-ce` running natively — either works)
+- [Astro CLI](https://www.astronomer.io/docs/astro/cli/install-cli)
+- A Snowflake account with a warehouse, role, and a `DBT_DB` database you can write to
+
+## Quickstart
+
+```bash
+# 1. Clone with the submodule — don't forget --recurse-submodules!
+git clone --recurse-submodules git@github.com:trinpb04/dbt-dag.git
+cd dbt-dag
+
+# 2. Create your local connection config (this file is gitignored on purpose)
+cp airflow_settings.example.yaml airflow_settings.yaml
+# ...then fill in your real Snowflake credentials (see below)
+
+# 3. Start Airflow
+astro dev start
+```
+
+Already cloned without the submodule? Run:
+```bash
+git submodule update --init --recursive
+```
+
+Once the containers are healthy, open **http://localhost:8080** (default login `admin` / `admin`), unpause `dbt_dag`, and trigger a run.
+
+## Configuring the Snowflake connection
+
+`astro dev start` reads connections from `airflow_settings.yaml` (local dev only — never committed). The Snowflake profile is built by Cosmos' `SnowflakeUserPasswordProfileMapping`, which pulls fields from the Airflow connection like this:
+
+| dbt profile field | Airflow connection field       |
+|--------------------|---------------------------------|
+| `account`          | `conn_extra.account`           |
+| `warehouse`        | `conn_extra.warehouse`         |
+| `role`             | `conn_extra.role` (optional)   |
+| `user`             | `conn_login`                   |
+| `password`         | `conn_password`                |
+| `schema`           | `conn_schema`                  |
+| `database`         | set in `dbt_dag.py` `profile_args` |
+
+Template:
+
+```yaml
+airflow:
+  connections:
+    - conn_id: "your_snowflake_conn"
+      conn_type: "snowflake"
+      conn_host: "<org>-<account>.snowflakecomputing.com"
+      conn_schema: "dbt_schema"
+      conn_login: "<your_username>"
+      conn_password: "<your_password>"
+      conn_extra:
+        account: "<org>-<account>"      # same as the org-account part of the host, hyphen-separated
+        warehouse: "dbt_wh"
+        role: "dbt_role"
+```
+
+> ⚠️ **Account identifier format matters.** Newer Snowflake accounts use `ORG-ACCOUNT` (hyphen). Don't swap it for a dot — `ORG.ACCOUNT` will resolve to a nonexistent host and fail with a `404` at login.
+
+Make sure `conn_id` here matches the one referenced in [`dags/dbt_dag.py`](dags/dbt_dag.py), and that `profile_name` in the same file matches the `profile:` key inside the dbt project's `dbt_project.yml`.
+
+## How it works
+
+1. **Cosmos parses the dbt project** (`ProjectConfig`) and resolves the model dependency graph via `dbt ls`.
+2. **Each dbt model becomes an Airflow task.** `ref()`/`source()` relationships become task dependencies — see the lineage diagram above.
+3. **Each task shells out to the real `dbt` binary** (`dbt_venv/bin/dbt`) with a profile generated on the fly from the Airflow connection, then runs `dbt run --select <model>` (or `test`, for the test tasks).
+
+Airflow owns scheduling, retries, and observability; dbt owns the actual SQL transformation logic in Snowflake; Cosmos is the glue that keeps both in sync automatically whenever the dbt project changes.
+
+## Troubleshooting
+
+Real errors hit while building this, kept here so nobody has to rediscover them:
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `Unable to find the dbt executable` | `dbt_executable_path` pointed at the `airflow` binary instead of `dbt` | Point it at `$AIRFLOW_HOME/dbt_venv/bin/dbt` |
+| `Could not find profile named ...` | `profile_name` in `dbt_dag.py` didn't match `profile:` in `dbt_project.yml` | Keep both in sync |
+| `Credentials ... invalid: 'account' is a required property` | `conn_extra` was missing `account`/`warehouse` | Add them under `conn_extra` (see template above) |
+| `404 Not Found` on login | Account identifier used `.` instead of `-` | Use `ORG-ACCOUNT`, hyphen-separated |
+| `Database error ... Object does not exist` | Typo'd database name in `profile_args` | Double check the exact database name in Snowflake (`SHOW DATABASES`) |
+| Editing `airflow_settings.yaml` had no effect | Changes to this file only apply on `astro dev start` / `astro dev restart`, not live | Run `astro dev restart` after editing |
+| `permission denied ... docker.sock` | Shell session opened *before* your user was added to the `docker` group | Open a new terminal session |
+
+## Useful commands
+
+```bash
+astro dev restart              # reload airflow_settings.yaml / Dockerfile changes
+astro dev stop                 # stop containers without deleting them
+docker ps                      # check container health
+docker exec -it <scheduler> airflow dags list-import-errors   # check DAG parse errors
+```
+
+---
+
+<div align="center">
+
+Built with Airflow, dbt, and a little bit of Snowflake stubbornness ❄️
+
+</div>

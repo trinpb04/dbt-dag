@@ -1,0 +1,26 @@
+# Copy this file to airflow_settings.yaml and fill in your real Snowflake credentials.
+# airflow_settings.yaml is gitignored on purpose — never commit real secrets.
+#
+# NOTE: changes to this file only take effect on `astro dev start` / `astro dev restart`,
+# not while containers are already running.
+
+airflow:
+  connections:
+    - conn_id: "your_snowflake_conn"
+      conn_type: "snowflake"
+      conn_host: "<org>-<account>.snowflakecomputing.com"
+      conn_schema: "dbt_schema"
+      conn_login: "<your_username>"
+      conn_password: "<your_password>"
+      conn_port:
+      conn_extra:
+        account: "<org>-<account>"
+        warehouse: "dbt_wh"
+        role: "dbt_role"
+  pools:
+    - pool_name:
+      pool_slot:
+      pool_description:
+  variables:
+    - variable_name:
+      variable_value:
