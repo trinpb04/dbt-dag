@@ -5,12 +5,30 @@ sources:
     database: snowflake_sample_data
     schema: tpch_sf1
     tables:
+      - name: customer
+        columns:
+          - name: c_custkey
+            tests:
+              - not_null
+              - unique
+          - name: c_nationkey
+            tests:
+              - not_null
+              - relationships:
+                  to: source('tpch', 'nation')
+                  field: n_nationkey
       - name: orders
         columns:
           - name: o_orderkey
             tests:
               - not_null
               - unique
+          - name: o_custkey
+            tests:
+              - not_null
+              - relationships:
+                  to: source('tpch', 'customer')
+                  field: c_custkey
       - name: lineitem
         columns:
           - name: l_orderkey
@@ -19,3 +37,21 @@ sources:
               - relationships:
                   to: source('tpch', 'orders')
                   field: o_orderkey
+      - name: nation
+        columns:
+          - name: n_nationkey
+            tests:
+              - not_null
+              - unique
+          - name: n_regionkey
+            tests:
+              - not_null
+              - relationships:
+                  to: source('tpch', 'region')
+                  field: r_regionkey
+      - name: region
+        columns:
+          - name: r_regionkey
+            tests:
+              - not_null
+              - unique
