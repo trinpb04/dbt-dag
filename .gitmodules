@@ -1,3 +1,0 @@
-[submodule "dags/dbt-datapipeline-0"]
-	path = dags/dbt-datapipeline-0
-	url = https://github.com/trinpb04/dbt-datapipeline-0.git
