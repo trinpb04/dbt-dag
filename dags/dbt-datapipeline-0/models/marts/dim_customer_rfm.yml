@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: dim_customer_rfm
+    description: "Phân khúc khách hàng theo RFM (Recency, Frequency, Monetary) - mỗi khách hàng được chấm điểm 1-5 trên từng trục và gắn vào 1 nhẵn hành vi (Chapions, Loyal, At Risk, Lost...)."
+    columns:
+      - name: customer_key
+        description: "Khóa chính, định danh duy nhất cho mỗi khách hàng."
+        tests:
+          - not_null
+          - unique
+      - name: recency_days
+        description: "Số ngày kể từ đơn hàng gần nhất, tính theo ngày cuối cùng có trong toàn bộ dataset (Không phải ngày thật hôm nay)."
+        tests:
+          - not_null
+      - name: frequency
+        description: "Tổng số đơn hàng của khách hàng."
+        tests:
+          - not_null
+      - name: monetary
+        description: "Tổng giá trị đơn hàng của khách hàng."
+        tests:
+          - not_null
+      - name: recency_score
+        description: "Điểm recency 1-5 (5 = mua gần đây nhất)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+      - name: frequency_score
+        description: "Điểm frequency 1-5 (5 = mua thường xuyên nhất)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+      - name: monetary_score
+        description: "Điểm monetary 1-5 (5 = chi tiêu nhiều nhất)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+      - name: rfm_segment
+        description: "Nhãn phân khúc hành vi khách hàng, suy ra từ tổ hợp 3 điểm trên."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Champions','Loyal Customers','New Customers','At Risk','Lost','Others']

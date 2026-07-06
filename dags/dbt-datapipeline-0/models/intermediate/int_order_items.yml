@@ -1,0 +1,23 @@
+version: 2
+
+models: 
+  - name: int_order_items
+    description: "Chi tiết từng line item trong đơn hàng, đã join order + lineitem và tính số tiền giảm giá theo dòng (item_discounted_amount)."
+    columns:
+      - name: order_item_key
+        description: "Khóa chính, định danh duy nhất cho mỗi line item (surrogate key từ order_key + line_number)."
+        tests:
+          - not_null
+          - unique
+      - name: order_key
+        description: "Khóa đơn hàng chứa line item này."
+        tests:
+          - not_null
+      - name: customer_key
+        description: "Khách hàng đặt đơn hàng chứa line item này."
+      - name: order_date
+        description: "Ngày đặt hàng."
+      - name: extended_price
+        description: "Giá trị line item trước khi giảm giá."
+      - name: item_discounted_amount
+        description: "Số tiền giảm giá của line item (Giá trị âm)."

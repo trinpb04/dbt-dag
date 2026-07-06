@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: fct_cohort_orders
+    description: "Mỗi dòng là 1 đơn hàng, gắn với cohort_month của khách hàng đó và period_number (số tháng cách lần mua đầu tiên). Dùng để dựng bảng retention theo cohort trong power BI."
+    columns:
+      - name: order_key
+        description: "Khóa chính, định danh duy nhất cho mỗi đơn hàng"
+        tests:
+          - not_null
+      - name: cohort_month
+        description: "Tháng khách hàng có đơn hàng đầu tiên (Lấy từ int_customer_cohort)."
+        tests:
+          - not_null
+      - name: order_month
+        description: "Tháng của chính đơn hàng này."
+        tests:
+          - not_null
+      - name: period_number
+        description: "Số tháng cách cohort_month (0 = tháng mua đầu tiên, 1 = tháng kế tiếp...)."
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"

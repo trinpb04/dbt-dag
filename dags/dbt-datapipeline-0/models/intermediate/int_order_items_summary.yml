@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: int_order_items_summary
+    description: "Gộp int_order_items theo order_key - mỗi dòng là tổng doanh số và tổng giảm giá của 1 đơn hàng."
+    columns:
+      - name: order_key
+        description: "Khóa chính, định danh duy nhất cho mỗi đơn hàng."
+        tests:
+          - not_null
+          - unique
+      - name: gross_item_sales_amount
+        description: "Tổng giá trị các line item trong đơn hàng, trước giảm giá."
+      - name: item_discount_amount
+        description: "Tổng số tiền giảm giá của toàn bộ đơn hàng."

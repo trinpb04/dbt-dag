@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: int_customer_cohort
+    description: "Xác định cohort_month của mỗi khách hàng — tháng có đơn hàng ĐẦU TIÊN trong toàn bộ lịch sử của họ. Mỗi khách hàng xuất hiện đúng 1 dòng duy nhất trong bảng này."
+    columns:
+      - name: customer_key
+        description: "Khóa chính khách hàng"
+        tests:
+          - not_null
+          - unique
+      - name: cohort_month
+        description: "Tháng đầu tiên khách hàng phát sinh đơn hàng, dùng để xác định cohort."
+        tests:
+          - not_null

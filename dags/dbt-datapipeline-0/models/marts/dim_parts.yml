@@ -1,0 +1,17 @@
+version: 2
+
+models: 
+  - name: dim_parts
+    description: "Dimension sản phẩm ,dùng để phân tích doanh số theo sản phẩm/ loại / thương hiệu"
+    columns:
+      - name: part_key
+        description: "khóa chính, định danh duy nhất cho mỗi sản phẩm."
+        tests:
+          - not_null
+          - unique
+      - name: part_name
+        description: "Tên sản phẩm"
+      - name: part_type
+        description: "Loại sản phẩm"
+      - name: brand
+        description: "Thương hiệu sản phẩm"

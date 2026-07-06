@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: dim_customer
+    description: "Dimension khách hàng, đã dẹt phẳng customer -> nation -> region."
+    columns:
+      - name: customer_key
+        description: "Khóa chính, định danh duy nhất cho mỗi khách hàng."
+        tests:
+          - not_null
+          - unique
+      - name: customer_name
+        description: "Tên khách hàng."
+        tests:
+          - not_null
+      - name: market_segment
+        description: "Phân khúc thị trường của khách hàng."
+      - name: nation_name
+        description: "Quốc gia của khách hàng."
+        tests:
+          - not_null
+      - name: region_name
+        description: "Khu vực địa lý của khách hàng."
+        tests:
+          - not_null
