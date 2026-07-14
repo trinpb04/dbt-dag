@@ -21,3 +21,6 @@ models:
         description: "Giá trị line item trước khi giảm giá."
       - name: item_discounted_amount
         description: "Số tiền giảm giá của line item (Giá trị âm)."
+      - name: quantity
+        tests:
+          - not_null

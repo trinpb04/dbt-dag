@@ -18,7 +18,9 @@ A production-style local sandbox where dbt models become native Airflow tasks �
 
 ## What is this?
 
-This repo orchestrates a [dbt project](https://github.com/trinpb04/dbt-datapipeline-0) (pulled in as a **git submodule**) through Apache Airflow using [`astronomer-cosmos`](https://astronomer.github.io/astronomer-cosmos/). Every dbt model gets automatically converted into its own Airflow task, wired up with the exact same dependency graph dbt already knows about — `ref()` and `source()` become upstream/downstream task edges for free.
+This repo orchestrates a dbt project (vendored directly under `dags/dbt-datapipeline-0/`) through Apache Airflow using [`astronomer-cosmos`](https://astronomer.github.io/astronomer-cosmos/). Every dbt model gets automatically converted into its own Airflow task, wired up with the exact same dependency graph dbt already knows about — `ref()` and `source()` become upstream/downstream task edges for free.
+
+The pipeline lands transformed marts (dimensions, fact tables, cohort analysis, RFM segmentation) in Snowflake, which then feed a Power BI **Sales Dashboard** for the reporting layer.
 
 ## Architecture
 
@@ -32,7 +34,7 @@ This repo orchestrates a [dbt project](https://github.com/trinpb04/dbt-datapipel
 dbt-dag/
 ├── dags/
 │   ├── dbt_dag.py                 # Cosmos DbtDag — the actual orchestration
-│   └── dbt-datapipeline-0/        # git submodule → the dbt project itself
+│   └── dbt-datapipeline-0/        # the dbt project itself (vendored, not a submodule)
 ├── Dockerfile                     # Astro Runtime image + a dedicated dbt venv
 ├── requirements.txt                # astronomer-cosmos, airflow-providers-snowflake
 ├── airflow_settings.yaml          # LOCAL ONLY, gitignored — connections/vars live here
@@ -50,8 +52,8 @@ Why a separate `dbt_venv` in the `Dockerfile`? `dbt-core` and `apache-airflow` f
 ## Quickstart
 
 ```bash
-# 1. Clone with the submodule — don't forget --recurse-submodules!
-git clone --recurse-submodules git@github.com:trinpb04/dbt-dag.git
+# 1. Clone the repo
+git clone git@github.com:trinpb04/dbt-dag.git
 cd dbt-dag
 
 # 2. Create your local connection config (this file is gitignored on purpose)
@@ -60,11 +62,6 @@ cp airflow_settings.example.yaml airflow_settings.yaml
 
 # 3. Start Airflow
 astro dev start
-```
-
-Already cloned without the submodule? Run:
-```bash
-git submodule update --init --recursive
 ```
 
 Once the containers are healthy, open **http://localhost:8080** (default login `admin` / `admin`), unpause `dbt_dag`, and trigger a run.
@@ -111,6 +108,14 @@ Make sure `conn_id` here matches the one referenced in [`dags/dbt_dag.py`](dags/
 3. **Each task shells out to the real `dbt` binary** (`dbt_venv/bin/dbt`) with a profile generated on the fly from the Airflow connection, then runs `dbt run --select <model>` (or `test`, for the test tasks).
 
 Airflow owns scheduling, retries, and observability; dbt owns the actual SQL transformation logic in Snowflake; Cosmos is the glue that keeps both in sync automatically whenever the dbt project changes.
+
+## Power BI Dashboard
+
+The Snowflake marts feed a single-page **Sales Dashboard** built in Power BI — KPI cards with YoY growth indicators, revenue trend, RFM segmentation, and market segment breakdown.
+
+![Sales Dashboard](docs/dashboard.png)
+
+**[Open the live dashboard](https://app.powerbi.com/view?r=eyJrIjoiNDQ3ZWEzN2QtYjA4ZC00NWVkLTg4NjMtMThlNWRiOWU2N2I3IiwidCI6IjM3MGZiM2I4LTMzMDYtNDg5MC05MDYzLWNjMDhiZTc4ODI1NyIsImMiOjEwfQ%3D%3D&embedImagePlaceholder=true)** (published to web, no login required)
 
 ## Troubleshooting
 
